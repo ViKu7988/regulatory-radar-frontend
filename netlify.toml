@@ -13,6 +13,11 @@
   status = 200
 
 [[redirects]]
+  from   = "/findings"
+  to     = "/findings.html"
+  status = 200
+
+[[redirects]]
   from   = "/pipeline"
   to     = "/pipeline.html"
   status = 200

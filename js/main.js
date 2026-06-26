@@ -8,8 +8,14 @@
 const API_BASE = "https://secluded-defacing-quiet.ngrok-free.dev/api";
 
 // ── HTTP helpers ───────────────────────────────────────────────────────────────
+// ngrok-skip-browser-warning bypasses the ngrok interstitial page for API calls
+const _HEADERS = {
+  "ngrok-skip-browser-warning": "true",
+  "Content-Type": "application/json",
+};
+
 async function apiGet(path) {
-  const r = await fetch(API_BASE + path);
+  const r = await fetch(API_BASE + path, { headers: { "ngrok-skip-browser-warning": "true" } });
   if (!r.ok) throw new Error(`API ${path} → ${r.status}`);
   return r.json();
 }
@@ -17,7 +23,7 @@ async function apiGet(path) {
 async function apiPost(path, body) {
   const r = await fetch(API_BASE + path, {
     method:  "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: _HEADERS,
     body:    JSON.stringify(body),
   });
   if (!r.ok) {
@@ -28,7 +34,12 @@ async function apiPost(path, body) {
 }
 
 async function apiPostForm(path, formData) {
-  const r = await fetch(API_BASE + path, { method: "POST", body: formData });
+  // Don't set Content-Type for FormData — browser sets it with boundary
+  const r = await fetch(API_BASE + path, {
+    method: "POST",
+    body: formData,
+    headers: { "ngrok-skip-browser-warning": "true" },
+  });
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
     throw new Error(err.error || `API ${path} → ${r.status}`);

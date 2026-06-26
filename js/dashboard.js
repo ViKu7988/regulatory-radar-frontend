@@ -10,7 +10,7 @@ let _riskMap = {};
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-  await Promise.all([loadPartners(), loadRegulations(), loadAlertLog(), loadPortfolioRisk()]);
+  await Promise.all([loadPartners(), loadRegulations(), loadAlertLog(), loadPortfolioRisk(), loadFindings()]);
 });
 
 // ── Load partners + build quick-selector ──────────────────────────────────────
@@ -428,4 +428,170 @@ async function ackAlert(alertId, btn) {
   } catch(e) {
     toast("Could not acknowledge: " + e.message, "error");
   }
+}
+
+// ── Compliance Findings (inline dashboard section) ────────────────────────────
+let _allFindings = [];
+
+// Called on boot and by Refresh button
+async function loadFindings() {
+  const wrap = document.getElementById("findingsTableWrap");
+  if (!wrap) return;
+  wrap.innerHTML = `<div class="loading-msg">Running compliance engine…</div>`;
+  try {
+    const data = await apiGet("/findings/?include_fp=true");
+    _allFindings = data.findings || [];
+
+    // Populate regulation filter dropdown
+    const regSel = document.getElementById("fRegFilter");
+    if (regSel) {
+      const regs = [...new Set(_allFindings.map(f => f.regulation_short_name).filter(Boolean))].sort();
+      const existing = Array.from(regSel.options).map(o => o.value);
+      regs.forEach(r => {
+        if (!existing.includes(r)) {
+          const opt = document.createElement("option");
+          opt.value = r; opt.textContent = r;
+          regSel.appendChild(opt);
+        }
+      });
+    }
+
+    // Populate company filter dropdown
+    const coSel = document.getElementById("fCoFilter");
+    if (coSel) {
+      const cos = [...new Set(_allFindings.map(f => f.company_name).filter(Boolean))].sort();
+      const existing = Array.from(coSel.options).map(o => o.value);
+      cos.forEach(c => {
+        if (!existing.includes(c)) {
+          const opt = document.createElement("option");
+          opt.value = c; opt.textContent = c;
+          coSel.appendChild(opt);
+        }
+      });
+    }
+
+    renderFindingsTable();
+  } catch(e) {
+    wrap.innerHTML = `<p style="color:var(--red);font-size:13px;">⚠ Could not load findings: ${e.message}</p>`;
+  }
+}
+
+function renderFindingsTable() {
+  const wrap    = document.getElementById("findingsTableWrap");
+  const showFP  = document.getElementById("showFPDash")?.checked || false;
+  const sevF    = document.getElementById("fSevFilter")?.value   || "";
+  const regF    = document.getElementById("fRegFilter")?.value   || "";
+  const coF     = document.getElementById("fCoFilter")?.value    || "";
+
+  let rows = _allFindings.filter(f => {
+    if (!showFP && f.is_false_positive) return false;
+    if (sevF && f.severity !== sevF)    return false;
+    if (regF && f.regulation_short_name !== regF) return false;
+    if (coF  && f.company_name !== coF) return false;
+    return true;
+  });
+
+  // Sort by deadline (earliest first; nulls last)
+  rows.sort((a, b) => {
+    if (!a.deadline && !b.deadline) return 0;
+    if (!a.deadline) return 1;
+    if (!b.deadline) return -1;
+    return new Date(a.deadline) - new Date(b.deadline);
+  });
+
+  const count = rows.length;
+  const badge = document.getElementById("findingsCount");
+  if (badge) badge.textContent = `${count} finding${count !== 1 ? "s" : ""}`;
+
+  if (!rows.length) {
+    wrap.innerHTML = `<p class="loading-msg">No findings match the current filters.</p>`;
+    return;
+  }
+
+  const sevColor = { high:"var(--red)", medium:"var(--orange)", low:"var(--accent)" };
+  const sevBg    = { high:"#fee2e2",    medium:"#fef3c7",       low:"#e0f2fe" };
+
+  const tableRows = rows.map((f, i) => {
+    const fpTag = f.is_false_positive
+      ? `<span class="chip chip-gray" style="font-size:10px;">FP</span> ` : "";
+    const sev   = f.severity || "low";
+    const srcLink = f.source_url
+      ? `<a href="${f.source_url}" target="_blank" rel="noopener"
+             style="color:var(--accent);font-size:12px;text-decoration:none;"
+             title="${f.source_url}">🔗 Source</a>`
+      : `<span style="color:var(--muted);font-size:12px;">—</span>`;
+
+    const reasonId = `fp-reason-${i}`;
+    const fpReason = f.is_false_positive && f.fp_reason
+      ? `<tr id="${reasonId}" style="display:none;">
+           <td colspan="7" style="padding:8px 12px;background:#f8f9fa;font-size:12px;color:var(--muted);font-style:italic;">
+             ⚡ False positive reason: ${f.fp_reason}
+           </td>
+         </tr>`
+      : "";
+
+    const llmId = `llm-${i}`;
+    const llmBtn = `<button onclick="toggleLLM('${llmId}')"
+                            style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--accent);padding:0;">
+                      🤖 Reasoning
+                    </button>`;
+    const llmRow = f.llm_reasoning
+      ? `<tr id="${llmId}" style="display:none;">
+           <td colspan="7" style="padding:10px 14px;background:#f0f4ff;border-left:3px solid var(--accent);font-size:12px;line-height:1.6;">
+             <strong>AI Reasoning:</strong> ${f.llm_reasoning}
+             ${f.source_url ? `<br><a href="${f.source_url}" target="_blank" rel="noopener" style="color:var(--accent);">📎 ${f.source_url}</a>` : ""}
+           </td>
+         </tr>`
+      : "";
+
+    return `
+      <tr style="border-bottom:1px solid var(--border);${f.is_false_positive ? 'opacity:0.65;' : ''}">
+        <td style="padding:10px 8px;">
+          ${fpTag}<strong style="font-size:13px;">${f.company_name || f.partner_id || "—"}</strong>
+        </td>
+        <td style="padding:10px 8px;">
+          <span style="display:inline-block;padding:3px 8px;border-radius:4px;
+                       font-size:11px;font-weight:700;text-transform:uppercase;
+                       background:${sevBg[sev]};color:${sevColor[sev]};">${sev}</span>
+        </td>
+        <td style="padding:10px 8px;font-size:12px;max-width:200px;">
+          <strong>${f.regulation_short_name || f.regulation_id || "—"}</strong>
+        </td>
+        <td style="padding:10px 8px;font-size:12px;max-width:240px;color:var(--text);">
+          ${f.gap_description || "—"}
+        </td>
+        <td style="padding:10px 8px;font-size:12px;color:var(--orange);white-space:nowrap;">
+          📅 ${f.deadline || "TBD"}
+        </td>
+        <td style="padding:10px 8px;">${srcLink}</td>
+        <td style="padding:10px 8px;">${llmBtn}</td>
+      </tr>
+      ${llmRow}
+      ${fpReason}`;
+  }).join("");
+
+  wrap.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:var(--surface);font-size:12px;text-align:left;">
+          <th style="padding:8px;">Partner</th>
+          <th style="padding:8px;">Severity</th>
+          <th style="padding:8px;">Regulation</th>
+          <th style="padding:8px;">Gap</th>
+          <th style="padding:8px;">Deadline</th>
+          <th style="padding:8px;">Source</th>
+          <th style="padding:8px;">AI</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;">
+      ${showFP ? "Showing real gaps + false positives (greyed)." : "False positives hidden — toggle to show."}
+      Click 🤖 Reasoning for AI-generated compliance analysis with source citations.
+    </p>`;
+}
+
+function toggleLLM(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === "none" ? "table-row" : "none";
 }

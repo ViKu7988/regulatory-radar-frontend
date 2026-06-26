@@ -15,9 +15,10 @@
         <span class="nav-badge">by EcoComply</span>
       </div>
       <div class="nav-links">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="onboard.html" class="nav-link">Get Started</a>
+        <a href="index.html"    class="nav-link">Home</a>
+        <a href="onboard.html"  class="nav-link">Get Started</a>
         <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="findings.html" class="nav-link">Findings</a>
         <a href="pipeline.html" class="nav-link active">Pipeline</a>
       </div>
       <button class="nav-hamburger" id="navHamburger" aria-label="Menu" aria-expanded="false">
@@ -35,9 +36,19 @@
   </div>
 
   <div class="page-header">
-    <div class="container">
-      <h1>Pipeline Runner</h1>
-      <p>Monitor → Understand → Match → Alert — watch every step live</p>
+    <div class="container" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1>Pipeline Runner</h1>
+        <p>Monitor → Understand → Match → Alert — watch every step live</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="loadSampleAndRun()">
+          📂 Load Sample Dataset
+        </button>
+        <a class="btn btn-secondary" href="findings.html">
+          🔍 View Findings →
+        </a>
+      </div>
     </div>
   </div>
 
@@ -75,13 +86,8 @@
         </button>
         <div class="trigger-select-row">
           <span>or trigger one regulation:</span>
-          <select class="field-input" id="triggerRegId" style="width:auto;min-width:220px;">
-            <option value="">— Select regulation —</option>
-            <option value="REG001">REG001 · EU Battery Passport</option>
-            <option value="REG002">REG002 · PPWR</option>
-            <option value="REG003">REG003 · RED Cybersecurity</option>
-            <option value="REG004">REG004 · CBAM</option>
-            <option value="REG005">REG005 · REACH SVHC Update</option>
+          <select class="field-input" id="triggerRegId" style="width:auto;min-width:260px;">
+            <option value="">— Loading regulations… —</option>
           </select>
           <button class="btn btn-secondary" onclick="triggerRegulation()">⚡ Trigger</button>
         </div>
@@ -185,5 +191,35 @@
   <script src="js/main.js"></script>
   <script src="js/pipeline.js"></script>
   <script src="js/nav.js"></script>
+  <script>
+  // Load real regulation list into trigger dropdown
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const d   = await apiGet("/regulations/");
+      const sel = document.getElementById("triggerRegId");
+      sel.innerHTML = '<option value="">— Select regulation —</option>';
+      (d.regulations || []).forEach(r => {
+        const o = document.createElement("option");
+        o.value       = r.id;
+        o.textContent = `${r.id} · ${(r.regulation_title||r.short_name||r.title||"").slice(0,55)}`;
+        sel.appendChild(o);
+      });
+    } catch {}
+  });
+
+  async function loadSampleAndRun() {
+    const btn = event.currentTarget;
+    btn.disabled = true; btn.textContent = "📂 Loading…";
+    try {
+      await apiPost("/findings/load-sample", {});
+      toast("Sample dataset loaded! Redirecting to Findings…", "success");
+      setTimeout(() => window.location = "findings.html", 1200);
+    } catch (e) {
+      toast("Error: " + e.message, "error");
+    } finally {
+      btn.disabled = false; btn.textContent = "📂 Load Sample Dataset";
+    }
+  }
+  </script>
 </body>
 </html>
