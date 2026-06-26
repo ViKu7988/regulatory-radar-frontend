@@ -442,24 +442,24 @@ async function loadFindings() {
     const data = await apiGet("/findings/?include_fp=true");
     _allFindings = data.findings || [];
 
-    // Populate regulation filter dropdown
+    // Populate regulation filter dropdown (API field: regulation_title)
     const regSel = document.getElementById("fRegFilter");
     if (regSel) {
-      const regs = [...new Set(_allFindings.map(f => f.regulation_short_name).filter(Boolean))].sort();
+      const regs = [...new Set(_allFindings.map(f => f.regulation_title || f.regulation_id).filter(Boolean))].sort();
       const existing = Array.from(regSel.options).map(o => o.value);
       regs.forEach(r => {
         if (!existing.includes(r)) {
           const opt = document.createElement("option");
-          opt.value = r; opt.textContent = r;
+          opt.value = r; opt.textContent = r.length > 50 ? r.slice(0,48)+"…" : r;
           regSel.appendChild(opt);
         }
       });
     }
 
-    // Populate company filter dropdown
+    // Populate company filter dropdown (API field: company)
     const coSel = document.getElementById("fCoFilter");
     if (coSel) {
-      const cos = [...new Set(_allFindings.map(f => f.company_name).filter(Boolean))].sort();
+      const cos = [...new Set(_allFindings.map(f => f.company).filter(Boolean))].sort();
       const existing = Array.from(coSel.options).map(o => o.value);
       cos.forEach(c => {
         if (!existing.includes(c)) {
@@ -486,8 +486,8 @@ function renderFindingsTable() {
   let rows = _allFindings.filter(f => {
     if (!showFP && f.is_false_positive) return false;
     if (sevF && f.severity !== sevF)    return false;
-    if (regF && f.regulation_short_name !== regF) return false;
-    if (coF  && f.company_name !== coF) return false;
+    if (regF && (f.regulation_title || f.regulation_id) !== regF) return false;
+    if (coF  && f.company !== coF) return false;
     return true;
   });
 
@@ -512,6 +512,12 @@ function renderFindingsTable() {
   const sevBg    = { high:"#fee2e2",    medium:"#fef3c7",       low:"#e0f2fe" };
 
   const tableRows = rows.map((f, i) => {
+    // Normalise field names (API uses: company, gap, regulation_title, false_positive_reason)
+    const company  = f.company      || f.company_name  || f.partner_id || "—";
+    const gapText  = f.gap          || f.gap_description || "—";
+    const regTitle = f.regulation_title || f.regulation_short_name || f.regulation_id || "—";
+    const fpReason = f.false_positive_reason || f.fp_reason || "";
+
     const fpTag = f.is_false_positive
       ? `<span class="chip chip-gray" style="font-size:10px;">FP</span> ` : "";
     const sev   = f.severity || "low";
@@ -522,10 +528,10 @@ function renderFindingsTable() {
       : `<span style="color:var(--muted);font-size:12px;">—</span>`;
 
     const reasonId = `fp-reason-${i}`;
-    const fpReason = f.is_false_positive && f.fp_reason
+    const fpReasonRow = f.is_false_positive && fpReason
       ? `<tr id="${reasonId}" style="display:none;">
            <td colspan="7" style="padding:8px 12px;background:#f8f9fa;font-size:12px;color:var(--muted);font-style:italic;">
-             ⚡ False positive reason: ${f.fp_reason}
+             ⚡ False positive reason: ${fpReason}
            </td>
          </tr>`
       : "";
@@ -547,7 +553,8 @@ function renderFindingsTable() {
     return `
       <tr style="border-bottom:1px solid var(--border);${f.is_false_positive ? 'opacity:0.65;' : ''}">
         <td style="padding:10px 8px;">
-          ${fpTag}<strong style="font-size:13px;">${f.company_name || f.partner_id || "—"}</strong>
+          ${fpTag}<strong style="font-size:13px;">${company}</strong>
+          <div style="font-size:11px;color:var(--muted);">${f.product || ""}</div>
         </td>
         <td style="padding:10px 8px;">
           <span style="display:inline-block;padding:3px 8px;border-radius:4px;
@@ -555,19 +562,23 @@ function renderFindingsTable() {
                        background:${sevBg[sev]};color:${sevColor[sev]};">${sev}</span>
         </td>
         <td style="padding:10px 8px;font-size:12px;max-width:200px;">
-          <strong>${f.regulation_short_name || f.regulation_id || "—"}</strong>
+          <strong>${regTitle.length > 50 ? regTitle.slice(0,48)+"…" : regTitle}</strong>
+          <div style="font-size:10px;color:var(--muted);">${f.regulation_family || ""}</div>
         </td>
         <td style="padding:10px 8px;font-size:12px;max-width:240px;color:var(--text);">
-          ${f.gap_description || "—"}
+          ${gapText}
         </td>
         <td style="padding:10px 8px;font-size:12px;color:var(--orange);white-space:nowrap;">
           📅 ${f.deadline || "TBD"}
+          ${f.days_left !== undefined && f.days_left !== null
+            ? `<div style="font-size:10px;color:${f.days_left < 0 ? 'var(--red)' : 'var(--muted)'};">${f.days_left < 0 ? '⚠ OVERDUE' : f.days_left + 'd left'}</div>`
+            : ""}
         </td>
         <td style="padding:10px 8px;">${srcLink}</td>
         <td style="padding:10px 8px;">${llmBtn}</td>
       </tr>
       ${llmRow}
-      ${fpReason}`;
+      ${fpReasonRow}`;
   }).join("");
 
   wrap.innerHTML = `
