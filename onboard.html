@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Started — Regulatory Radar</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <span class="nav-logo">🛡️</span>
+        <span class="nav-name">Regulatory<strong>Radar</strong></span>
+        <span class="nav-badge">by EcoComply</span>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="onboard.html" class="nav-link active">Get Started</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="pipeline.html" class="nav-link">Pipeline</a>
+      </div>
+      <button class="nav-hamburger" id="navHamburger" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+  <!-- Mobile nav drawer -->
+  <div class="nav-drawer" id="navDrawer">
+    <a href="index.html"     class="nav-link">Home</a>
+    <a href="onboard.html"   class="nav-link">Get Started</a>
+    <a href="dashboard.html" class="nav-link">Dashboard</a>
+    <a href="pipeline.html"  class="nav-link">Pipeline</a>
+    <a href="onboard.html"   class="btn btn-primary">Try Live Demo</a>
+  </div>
+
+  <main class="onboard-main">
+    <div class="onboard-container">
+      <!-- ── Left panel: intro ─────────────────────────────────────────────── -->
+      <div class="onboard-intro">
+        <div class="onboard-intro-inner">
+          <div class="intro-logo">🛡️</div>
+          <h1>Set Up Your<br>Regulatory Radar</h1>
+          <p>Tell us about your company and products. IBM Bob will instantly match your profile against active EU regulations and send you a real alert.</p>
+          <ul class="intro-checklist">
+            <li>✅ 60-second setup</li>
+            <li>✅ Instant AI-powered matching</li>
+            <li>✅ Real WhatsApp / SMS / email alert</li>
+            <li>✅ No legal jargon — plain language only</li>
+            <li>✅ Upload your portfolio or enter manually</li>
+          </ul>
+          <div class="intro-powered">
+            <span>Powered by</span>
+            <strong>IBM Bob (Watsonx)</strong>
+            <span>&amp;</span>
+            <strong>Twilio</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right panel: form ──────────────────────────────────────────────── -->
+      <div class="onboard-form-wrap">
+        <!-- ── Upload option ─────────────────────────────────────────────── -->
+        <div class="upload-section" id="uploadSection">
+          <h2 class="form-section-title">Upload your partner portfolio</h2>
+          <p class="form-hint">Already have an SME dataset? Upload it directly and skip the form.</p>
+          <div class="upload-tabs">
+            <button class="upload-tab active" data-tab="local">📁 Local File</button>
+            <button class="upload-tab" data-tab="drive">☁️ Google Drive</button>
+            <button class="upload-tab" data-tab="onedrive">💼 OneDrive</button>
+          </div>
+
+          <!-- Local upload -->
+          <div class="upload-pane active" id="pane-local">
+            <div class="dropzone" id="dropzone">
+              <div class="dropzone-icon">📂</div>
+              <p class="dropzone-text"><strong>Drag &amp; drop your JSON file here</strong><br>or click to browse</p>
+              <input type="file" id="fileInput" accept=".json" class="dropzone-input" />
+            </div>
+            <div class="upload-status" id="uploadStatus"></div>
+          </div>
+
+          <!-- Google Drive -->
+          <div class="upload-pane" id="pane-drive">
+            <div class="cloud-upload-form">
+              <label class="field-label">Google Drive share link</label>
+              <input type="url" id="driveUrl" class="field-input" placeholder="https://drive.google.com/file/d/..." />
+              <button class="btn btn-secondary mt-8" onclick="uploadFromCloud('drive')">Load from Drive</button>
+              <p class="form-hint mt-4">File must be shared publicly or as "Anyone with link"</p>
+            </div>
+          </div>
+
+          <!-- OneDrive -->
+          <div class="upload-pane" id="pane-onedrive">
+            <div class="cloud-upload-form">
+              <label class="field-label">OneDrive share link</label>
+              <input type="url" id="onedriveUrl" class="field-input" placeholder="https://1drv.ms/..." />
+              <button class="btn btn-secondary mt-8" onclick="uploadFromCloud('onedrive')">Load from OneDrive</button>
+              <p class="form-hint mt-4">File must be shared with "Anyone with the link" permission</p>
+            </div>
+          </div>
+
+          <div class="upload-divider">
+            <span>or fill in manually below</span>
+          </div>
+        </div>
+
+        <!-- ── Manual form ────────────────────────────────────────────────── -->
+        <form id="onboardForm" novalidate>
+          <!-- Company info -->
+          <div class="form-section">
+            <h2 class="form-section-title">Your Company</h2>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="companyName">Company name *</label>
+                <input class="field-input" type="text" id="companyName" placeholder="AlphaVolt GmbH" required />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="contactName">Your name *</label>
+                <input class="field-input" type="text" id="contactName" placeholder="Markus Bauer" required />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="country">Country</label>
+                <select class="field-input" id="country">
+                  <option value="Germany">Germany</option>
+                  <option value="Austria">Austria</option>
+                  <option value="Netherlands">Netherlands</option>
+                  <option value="France">France</option>
+                  <option value="Italy">Italy</option>
+                  <option value="Spain">Spain</option>
+                  <option value="Poland">Poland</option>
+                  <option value="Sweden">Sweden</option>
+                  <option value="Norway">Norway</option>
+                  <option value="Other EU">Other EU</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="sector">Industry sector *</label>
+                <select class="field-input" id="sector" required>
+                  <option value="">— Select sector —</option>
+                  <option value="Electronics">Electronics / Hardware</option>
+                  <option value="Consumer Electronics">Consumer Electronics</option>
+                  <option value="Renewable Energy">Renewable Energy</option>
+                  <option value="Automotive">Automotive / EV</option>
+                  <option value="Medical Devices">Medical Devices</option>
+                  <option value="Packaging">Packaging</option>
+                  <option value="Chemical / Materials">Chemical / Materials</option>
+                  <option value="Textile / Fashion">Textile / Fashion</option>
+                  <option value="Steel / Manufacturing">Steel / Manufacturing</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact & alert channels -->
+          <div class="form-section">
+            <h2 class="form-section-title">Alert Preferences</h2>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="phone">Phone / WhatsApp *</label>
+                <input class="field-input" type="tel" id="phone" placeholder="+49 151 0000000" required />
+                <p class="field-hint">For WhatsApp &amp; SMS alerts</p>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="email">Email address</label>
+                <input class="field-input" type="email" id="email" placeholder="you@company.de" />
+                <p class="field-hint">For email alerts</p>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Alert channels</label>
+              <div class="checkbox-row">
+                <label class="checkbox-label"><input type="checkbox" name="channels" value="whatsapp" checked /> WhatsApp</label>
+                <label class="checkbox-label"><input type="checkbox" name="channels" value="sms" /> SMS</label>
+                <label class="checkbox-label"><input type="checkbox" name="channels" value="email" /> Email</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products -->
+          <div class="form-section">
+            <h2 class="form-section-title">Your Products &amp; Certifications</h2>
+            <div class="field-group">
+              <label class="field-label">Product categories *</label>
+              <p class="field-hint">Select all that apply to your portfolio</p>
+              <div class="tag-selector" id="productSelector">
+                <button type="button" class="tag-btn" data-val="lithium_batteries">🔋 Lithium Batteries</button>
+                <button type="button" class="tag-btn" data-val="ev_components">🚗 EV Components</button>
+                <button type="button" class="tag-btn" data-val="energy_storage">⚡ Energy Storage</button>
+                <button type="button" class="tag-btn" data-val="consumer_electronics">📱 Consumer Electronics</button>
+                <button type="button" class="tag-btn" data-val="wireless_devices">📶 Wireless / RF Devices</button>
+                <button type="button" class="tag-btn" data-val="iot_devices">🏠 IoT Devices</button>
+                <button type="button" class="tag-btn" data-val="plastic_packaging">📦 Plastic Packaging</button>
+                <button type="button" class="tag-btn" data-val="consumer_packaging">🛍️ Consumer Packaging</button>
+                <button type="button" class="tag-btn" data-val="chemical_substances">⚗️ Chemical Substances</button>
+                <button type="button" class="tag-btn" data-val="industrial_coatings">🎨 Industrial Coatings</button>
+                <button type="button" class="tag-btn" data-val="reach_substances">🧪 REACH Substances</button>
+                <button type="button" class="tag-btn" data-val="printed_circuit_boards">🔌 PCBs</button>
+                <button type="button" class="tag-btn" data-val="medical_devices">🩺 Medical Devices</button>
+                <button type="button" class="tag-btn" data-val="solar_panels">☀️ Solar Panels</button>
+                <button type="button" class="tag-btn" data-val="automotive_parts">🔧 Automotive Parts</button>
+                <button type="button" class="tag-btn" data-val="steel_products">🏗️ Steel Products</button>
+                <button type="button" class="tag-btn" data-val="textiles">👕 Textiles</button>
+                <button type="button" class="tag-btn" data-val="carbon_intensive_goods">🏭 Carbon-Intensive Goods</button>
+              </div>
+            </div>
+            <div class="field-group mt-16">
+              <label class="field-label">Current certifications</label>
+              <div class="tag-selector" id="certSelector">
+                <button type="button" class="tag-btn" data-val="CE">CE</button>
+                <button type="button" class="tag-btn" data-val="RoHS">RoHS</button>
+                <button type="button" class="tag-btn" data-val="REACH">REACH</button>
+                <button type="button" class="tag-btn" data-val="WEEE">WEEE</button>
+                <button type="button" class="tag-btn" data-val="RED">RED</button>
+                <button type="button" class="tag-btn" data-val="MDR">MDR</button>
+                <button type="button" class="tag-btn" data-val="ISO14001">ISO 14001</button>
+                <button type="button" class="tag-btn" data-val="ISO9001">ISO 9001</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-submit">
+            <button type="submit" class="btn btn-primary btn-xl btn-full" id="submitBtn">
+              <span id="submitText">🛡️ Activate My Regulatory Radar</span>
+              <span id="submitSpinner" class="spinner hidden"></span>
+            </button>
+            <p class="form-hint center mt-8">IBM Bob will analyse your profile and send a real alert to your phone.</p>
+          </div>
+        </form>
+
+        <!-- ── Results panel ──────────────────────────────────────────────── -->
+        <div class="results-panel hidden" id="resultsPanel">
+          <div class="results-header">
+            <div class="results-icon">🎯</div>
+            <h2>Your Radar is Live!</h2>
+            <p id="resultsIntro"></p>
+          </div>
+
+          <div class="risk-badge-wrap">
+            <div class="risk-badge" id="riskBadge"></div>
+            <div class="risk-score-label" id="riskScoreLabel"></div>
+          </div>
+
+          <div class="risk-summary-text" id="riskSummary"></div>
+
+          <h3 class="matches-title">Regulations That Match Your Profile</h3>
+          <div class="matches-list" id="matchesList"></div>
+
+          <h3 class="alerts-title">Alerts Triggered</h3>
+          <div class="alerts-list" id="alertsList"></div>
+
+          <div class="results-actions">
+            <a href="dashboard.html" class="btn btn-primary">View Full Dashboard →</a>
+            <button class="btn btn-secondary" onclick="resetForm()">Register Another Company</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>🛡️ <strong>Regulatory Radar</strong> by EcoComply · IBM Bobathon 2025</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/onboard.js"></script>
+  <script src="js/nav.js"></script>
+</body>
+</html>
